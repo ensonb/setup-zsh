@@ -36,7 +36,7 @@ A comprehensive automated installation script for setting up a beautiful and pro
 ### One-Line Installation
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/ensonb/setup-zsh/main/setup-zsh.sh)"
+bash <(curl -fsSL https://raw.githubusercontent.com/ensonb/setup-zsh/main/setup-zsh.sh)
 ```
 
 ### Manual Installation
