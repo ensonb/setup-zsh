@@ -28,6 +28,8 @@ A comprehensive automated installation script for setting up a beautiful and pro
 3. **Powerlevel10k** - Supercharged prompt theme
 4. **JetBrains Mono Nerd Font** - Font with programming ligatures and icons
 5. **Useful plugins** - Autosuggestions and syntax highlighting
+6. **Saved prompt style** - `p10k.zsh` (rainbow, Nerd Font icons) copied to `~/.p10k.zsh`, so the p10k wizard is skipped
+7. **Aliases** - `ld`, `ltr`, `www`, plus Claude/openclaw shortcuts `clx`, `opc`, `cldr`
 
 ## 🚀 Quick Start
 
@@ -66,7 +68,7 @@ chmod +x setup-zsh.sh
    - Set font to: `JetBrainsMono Nerd Font` or `JetBrainsMono NF`
    - Font size: 12-14 recommended
 
-3. **Customize Powerlevel10k** (if not auto-started):
+3. **Change the prompt style** (optional; a saved style is installed by default):
    ```bash
    p10k configure
    ```

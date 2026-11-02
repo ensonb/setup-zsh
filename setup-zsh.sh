@@ -170,9 +170,9 @@ configure_zshrc() {
         echo 'ZSH_THEME="powerlevel10k/powerlevel10k"' >> "$ZSHRC"
     fi
     
-    # Add useful plugins if not already present
-    if ! grep -q "plugins=(git" "$ZSHRC"; then
-        sed -i.bak 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "$ZSHRC"
+    # Enable autosuggestions + syntax highlighting if not already enabled
+    if ! grep -q "^plugins=.*zsh-autosuggestions" "$ZSHRC"; then
+        sed -i.bak 's/^plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "$ZSHRC"
     fi
     
     print_success ".zshrc configured successfully!"
@@ -195,6 +195,83 @@ install_plugins() {
         git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
         print_success "zsh-syntax-highlighting installed!"
     fi
+}
+
+# Install the saved Powerlevel10k prompt config (skips the p10k wizard)
+P10K_URL="https://raw.githubusercontent.com/ensonb/setup-zsh/main/p10k.zsh"
+
+install_p10k_config() {
+    print_info "Installing Powerlevel10k prompt config..."
+
+    ZSHRC="$HOME/.zshrc"
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+
+    if [ -f "$HOME/.p10k.zsh" ]; then
+        cp "$HOME/.p10k.zsh" "$HOME/.p10k.zsh.backup.$(date +%Y%m%d%H%M%S)"
+        print_info "Backed up existing .p10k.zsh"
+    fi
+
+    # Use the copy next to this script, or download it when run via curl | bash
+    if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/p10k.zsh" ]; then
+        cp "$SCRIPT_DIR/p10k.zsh" "$HOME/.p10k.zsh"
+    elif ! curl -fsSL "$P10K_URL" -o "$HOME/.p10k.zsh"; then
+        print_warning "Could not get p10k.zsh. Run 'p10k configure' to set up the prompt."
+        return
+    fi
+
+    # Instant prompt block must sit at the very top of .zshrc
+    if ! grep -q "p10k-instant-prompt" "$ZSHRC"; then
+        TMP_RC=$(mktemp)
+        cat > "$TMP_RC" << 'EOF'
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+EOF
+        cat "$ZSHRC" >> "$TMP_RC"
+        mv "$TMP_RC" "$ZSHRC"
+    fi
+
+    if ! grep -q "source ~/.p10k.zsh" "$ZSHRC"; then
+        cat >> "$ZSHRC" << 'EOF'
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+EOF
+    fi
+
+    print_success "Powerlevel10k prompt config installed!"
+}
+
+# Add personal aliases
+add_aliases() {
+    print_info "Adding aliases..."
+
+    ZSHRC="$HOME/.zshrc"
+
+    if grep -q "# setup-zsh aliases" "$ZSHRC"; then
+        print_info "Aliases already present. Skipping..."
+        return
+    fi
+
+    cat >> "$ZSHRC" << 'EOF'
+
+# setup-zsh aliases
+export PATH="$HOME/.local/bin:$PATH"
+alias ld='ls -lhtrd */'
+alias ltr='ls -lhtr'
+alias www='cd /var/www/html'
+
+# Claude / openclaw
+alias clx='claude --dangerously-skip-permissions'
+alias opc='cd ~/.openclaw && claude --enable-auto-mode'
+alias cldr='cd ~/.openclaw && claude --resume'
+EOF
+
+    print_success "Aliases added!"
 }
 
 # Set zsh as default shell
@@ -235,6 +312,8 @@ main() {
     install_powerlevel10k
     install_plugins
     configure_zshrc
+    install_p10k_config
+    add_aliases
     set_default_shell
     
     echo ""
@@ -243,7 +322,7 @@ main() {
     print_info "Next steps:"
     echo "  1. Restart your terminal or run: source ~/.zshrc"
     echo "  2. Set your terminal font to 'JetBrainsMono Nerd Font'"
-    echo "  3. Run 'p10k configure' to customize your prompt"
+    echo "  3. Prompt is preconfigured; run 'p10k configure' to change it"
     echo ""
     print_warning "If you see any strange characters, make sure your terminal is using the Nerd Font!"
     echo ""
