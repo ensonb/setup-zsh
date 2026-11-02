@@ -96,9 +96,40 @@ install_oh_my_zsh() {
     print_success "Oh My Zsh installed successfully!"
 }
 
+# Install tools the font step needs (bare systems often lack unzip/fontconfig)
+ensure_font_tools() {
+    local missing=()
+    command -v wget &> /dev/null || missing+=(wget)
+    command -v unzip &> /dev/null || missing+=(unzip)
+    if [[ "$OS" != "macos" ]] && ! command -v fc-cache &> /dev/null; then
+        missing+=(fontconfig)
+    fi
+
+    [ ${#missing[@]} -eq 0 ] && return
+
+    print_info "Installing ${missing[*]}..."
+    case $OS in
+        ubuntu|debian)
+            sudo apt update
+            sudo apt install -y "${missing[@]}"
+            ;;
+        fedora|rhel|centos)
+            sudo dnf install -y "${missing[@]}"
+            ;;
+        arch|manjaro)
+            sudo pacman -Sy --noconfirm "${missing[@]}"
+            ;;
+        macos)
+            brew install "${missing[@]}"
+            ;;
+    esac
+}
+
 # Install JetBrains Mono Nerd Font
 install_nerd_font() {
     print_info "Installing JetBrains Mono Nerd Font..."
+
+    ensure_font_tools
     
     FONT_DIR=""
     
